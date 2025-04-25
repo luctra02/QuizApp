@@ -20,8 +20,6 @@ const LoginButton = () => {
         fetchUser();
     }, [supabase.auth]);
 
-    console.log("HERRRRR", user);
-
     return (
         <div className="flex items-center space-x-2">
             {user ? (

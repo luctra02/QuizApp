@@ -1,44 +1,30 @@
+"use client";
 import useUser from "@/app/hooks/useUser";
-import { cn } from "@/lib/utils";
-import React from "react";
 import Image from "next/image";
-const Avatar = () => {
+
+export default function Avatar() {
     const { data, isFetching } = useUser();
-    const imageUrl = data?.user_metadata?.avatar_url;
 
-    console.log(data);
+    if (isFetching || !data) {
+        return (
+            <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+        );
+    }
 
-    return (
-        <div
-            className={cn(
-                " transition-all w-10 h-10",
-                isFetching
-                    ? "opacity-0 translate-y-2"
-                    : "opacity-1 translate-y-0"
-            )}
-        >
-            {!imageUrl ? (
-                <div className=" border w-10 h-10    grid place-content-center rounded-full hover:scale-105 transition-all">
-                    <p className="text-4xl -translate-y-1">
-                        {data?.email?.[0]}
-                    </p>
-                </div>
-            ) : (
-                <Image
-                    src={imageUrl}
-                    alt=""
-                    width={50}
-                    height={50}
-                    className={cn(
-                        " rounded-full border p-1 hover:scale-105 transition-all duration-500",
-                        isFetching
-                            ? "opacity-0 translate-y-2"
-                            : "opacity-1 translate-y-0"
-                    )}
-                />
-            )}
+    const imageUrl = data.user_metadata?.avatar_url;
+    const emailInitial = data.email?.[0]?.toUpperCase() || "?";
+
+    return !imageUrl ? (
+        <div className="w-10 h-10 bg-muted text-muted-foreground flex items-center justify-center rounded-full">
+            <p className="text-4xl -translate-y-1">{emailInitial}</p>
         </div>
+    ) : (
+        <Image
+            src={imageUrl}
+            alt="user avatar"
+            width={50}
+            height={50}
+            className="rounded-full object-cover w-10 h-10"
+        />
     );
-};
-
-export default Avatar;
+}

@@ -126,17 +126,17 @@ export default function ManageProfile() {
             <DialogTrigger asChild>
                 <button id="manage-profile"></button>
             </DialogTrigger>
-            <DialogContent className=" w-full md:w-[55rem] flex flex-col sm:flex-row  ">
-                <div className=" w-60 h-[100%] rounded-s-lg p-5 space-y-7 ">
+            <DialogContent className="w-full max-w-[60rem] sm:max-w-[70rem] flex flex-col sm:flex-row overflow-hidden">
+                <div className="w-72 h-full rounded-s-lg p-5 space-y-7">
                     <div>
                         <DialogTitle>Manage Profile</DialogTitle>
                     </div>
 
                     <div
                         className={cn(
-                            "p-2 flex items-center gap-2  rounded-lg text-sm cursor-pointer transition-all  ",
+                            "p-2 flex items-center gap-2 rounded-lg text-sm cursor-pointer transition-all",
                             {
-                                " text-green-700 dark:text-green-500 ring-[0.5px] ring-zinc-400":
+                                "text-green-700 dark:text-green-500 ring-[0.5px] ring-zinc-400":
                                     activeTab == "profile",
                             }
                         )}
@@ -147,17 +147,19 @@ export default function ManageProfile() {
                     </div>
                 </div>
 
-                <div className="flex-1 h-full  border-l rounded-lg px-5 sm:px-10 py-5 divide-y-[0.5px] space-y-5">
-                    <h1 className="font-bold text-xl w-36">Profile details</h1>
-                    <div className="flex items-center py-5  sm:gap-24">
-                        <h1 className="text-sm font-medium w-36 ">Profile</h1>
-                        <div className="flex-1 sm:px-3">
-                            <Avatar />
+                <div className="flex-1 h-full border-l rounded-lg px-5 sm:px-10 py-5 divide-y-[0.5px] space-y-5 overflow-auto">
+                    <h1 className="font-bold text-xl">Profile details</h1>
+                    <div className="flex items-center py-5 sm:gap-24">
+                        <h1 className="text-sm font-medium w-36">Profile</h1>
+                        <div className="sm:px-3 flex justify-center">
+                            <div className="w-24">
+                                <Avatar />
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center sm:gap-24 py-5 justify-between ">
+                    <div className="flex items-center sm:gap-24 py-5 justify-between">
                         <h1 className="text-sm font-medium w-36">Username</h1>
-                        <div className="flex-1 flex justify-between items-center sm:pl-3  ">
+                        <div className="flex-1 flex justify-between items-center sm:pl-3">
                             {isEditing ? (
                                 <input
                                     id="usernameInput"
@@ -176,17 +178,17 @@ export default function ManageProfile() {
                             />
                         </div>
                     </div>
-                    <div className="flex items-center sm:gap-24 py-5 justify-between ">
+                    <div className="flex items-center sm:gap-24 py-5 justify-between">
                         <h1 className="text-sm font-medium w-36">Email</h1>
-                        <div className="flex-1 flex justify-between items-center sm:pl-3  ">
+                        <div className="flex-1 flex justify-between items-center sm:pl-3">
                             <p className="text-sm">{data?.email}</p>
                         </div>
                     </div>
-                    <div className="flex items-start py-5 gap-2 sm:gap-24 ">
-                        <h1 className="text-sm font-medium w-36  ">
+                    <div className="flex items-start py-5 gap-2 sm:gap-24">
+                        <h1 className="text-sm font-medium w-36">
                             Connected accounts
                         </h1>
-                        <div className="flex-1 space-y-5 ">
+                        <div className="flex-1 space-y-5">
                             <div className="flex items-center gap-2 px-3">
                                 <AuthProviderIcon />
                                 <p className="capitalize">
