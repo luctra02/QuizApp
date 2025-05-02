@@ -53,7 +53,7 @@ export default function StartQuizPage() {
 
     return (
         <main className="min-h-screen flex items-center justify-center px-4">
-            <Card className="bg-black/30 p-6 md:p-10 rounded-2xl shadow-xl w-full max-w-md space-y-6 text-white">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 border p-6 md:p-10 rounded-2xl shadow-xl w-full max-w-md space-y-6 text-white">
                 <h1 className="text-3xl font-bold text-center mb-4">
                     Start a Quiz
                 </h1>
