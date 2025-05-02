@@ -66,12 +66,12 @@ export default function Home() {
                     {/* CTA Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <LoginButton />
-                        <Link href="/explore">
+                        <Link href="/start">
                             <Button
                                 variant="outline"
                                 className="bg-white/10 backdrop-blur-sm text-white border-white/20 hover:bg-white/20"
                             >
-                                Explore Quizzes
+                                Start Quiz
                             </Button>
                         </Link>
                     </div>
