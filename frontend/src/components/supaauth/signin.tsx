@@ -38,7 +38,7 @@ export default function SignIn() {
     const next = urlParams.get("next");
 
     return (
-        <div className="w-full sm:w-[26rem] shadow sm:p-5  border dark:border-zinc-800 rounded-md">
+        <div className="w-full sm:w-[26rem] shadow sm:p-5  border dark:border-zinc-800 rounded-md text-white">
             <div className="p-5 space-y-5">
                 <div className="text-center space-y-3">
                     <h1 className="font-bold">Log in to Quiz App</h1>

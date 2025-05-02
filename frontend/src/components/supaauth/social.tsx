@@ -22,7 +22,7 @@ export default function Social({ redirectTo }: { redirectTo: string }) {
     return (
         <div className="w-full flex gap-2">
             <Button
-                className="flex-1 h-8 flex items-center gap-2"
+                className="flex-1 h-8 flex items-center gap-2 text-black"
                 variant="outline"
                 onClick={() => loginWithProvider("discord")}
             >
@@ -30,7 +30,7 @@ export default function Social({ redirectTo }: { redirectTo: string }) {
                 Discord
             </Button>
             <Button
-                className="flex-1 h-8 flex items-center gap-2"
+                className="flex-1 h-8 flex items-center gap-2 text-black"
                 variant="outline"
                 onClick={() => loginWithProvider("google")}
             >

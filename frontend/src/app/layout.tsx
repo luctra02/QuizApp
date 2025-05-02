@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import QueryProvider from "@/components/query-provider";
+import ParticlesBackground from "@/components/ParticlesBackground";
 
 export const metadata: Metadata = {
     title: "Quiz App",
@@ -16,11 +17,17 @@ export default function RootLayout({
     return (
         <html lang="en">
             <head />
-            <body>
-                <QueryProvider>
-                    {children}
-                    <Toaster />
-                </QueryProvider>
+            <body className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+                {/* Particle Background */}
+                <ParticlesBackground />
+
+                {/* Foreground content */}
+                <div className="relative z-10">
+                    <QueryProvider>
+                        {children}
+                        <Toaster />
+                    </QueryProvider>
+                </div>
             </body>
         </html>
     );
