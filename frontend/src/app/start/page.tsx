@@ -23,16 +23,20 @@ export default function StartQuizPage() {
     const [category, setCategory] = useState<string>("anycat");
     const [difficulty, setDifficulty] = useState("anydiff");
     const [type, setType] = useState("anytype");
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         const fetchCategories = async () => {
+            setIsLoading(true);
             try {
                 const res = await fetch("https://opentdb.com/api_category.php");
                 const data = await res.json();
                 setCategories(data.trivia_categories);
             } catch (err) {
                 console.error("Failed to fetch categories:", err);
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -52,71 +56,165 @@ export default function StartQuizPage() {
     };
 
     return (
-        <main className="min-h-screen flex items-center justify-center px-4">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 border p-6 md:p-10 rounded-2xl shadow-xl w-full max-w-md space-y-6 text-white">
-                <h1 className="text-3xl font-bold text-center mb-4">
-                    Start a Quiz
+        <main className="min-h-screen flex flex-col items-center justify-center p-6">
+            {/* Quiz Header */}
+            <div className="text-center mb-8">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 flex items-center justify-center">
+                    <span className="mr-3 text-blue-400">🧠</span>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                        QuizMaster
+                    </span>
                 </h1>
+                <p className="text-lg text-blue-200">
+                    Test your knowledge with our interactive quizzes!
+                </p>
+            </div>
 
-                <div className="space-y-2 ">
-                    <Label>Category</Label>
-                    <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger className="bg-slate-800 text-white border border-slate-700">
-                            <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border border-slate-700">
-                            <SelectItem value="anycat">Any Category</SelectItem>
-                            {categories.map((cat) => (
+            <Card className="bg-slate-900/80 backdrop-blur-md border-purple-500/30 border p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-md text-white">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 -mx-8 -mt-8 mb-6 p-6 rounded-t-xl flex items-center">
+                    <span className="text-2xl mr-3">📚</span>
+                    <h2 className="text-2xl font-bold text-white">
+                        Customize Your Quiz
+                    </h2>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <Label className="text-blue-200 flex items-center">
+                            <span className="mr-2">✨</span>
+                            Category
+                        </Label>
+                        <Select
+                            value={category}
+                            onValueChange={setCategory}
+                            disabled={isLoading}
+                        >
+                            <SelectTrigger className="bg-slate-800 text-white border border-purple-500/50 focus:ring-purple-500 focus:border-purple-500 rounded-lg">
+                                <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent
+                                className="bg-slate-800 text-white border border-purple-500/50"
+                                style={{ colorScheme: "dark" }}
+                            >
                                 <SelectItem
-                                    key={cat.id}
-                                    value={cat.id.toString()}
+                                    value="anycat"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
-                                    {cat.name}
+                                    Any Category
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                                {categories.map((cat) => (
+                                    <SelectItem
+                                        key={cat.id}
+                                        value={cat.id.toString()}
+                                        className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                    >
+                                        {cat.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-blue-200 flex items-center">
+                            <span className="mr-2">🏆</span>
+                            Difficulty
+                        </Label>
+                        <Select
+                            value={difficulty}
+                            onValueChange={setDifficulty}
+                        >
+                            <SelectTrigger className="bg-slate-800 text-white border border-purple-500/50 focus:ring-purple-500 focus:border-purple-500 rounded-lg">
+                                <SelectValue placeholder="Select Difficulty" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 text-white border border-purple-500/50">
+                                <SelectItem
+                                    value="anydiff"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    Any difficulty
+                                </SelectItem>
+                                <SelectItem
+                                    value="easy"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    <span className="flex items-center">
+                                        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                                        Easy
+                                    </span>
+                                </SelectItem>
+                                <SelectItem
+                                    value="medium"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    <span className="flex items-center">
+                                        <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
+                                        Medium
+                                    </span>
+                                </SelectItem>
+                                <SelectItem
+                                    value="hard"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    <span className="flex items-center">
+                                        <span className="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                                        Hard
+                                    </span>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-blue-200 flex items-center">
+                            <span className="mr-2">❓</span>
+                            Question Type
+                        </Label>
+                        <Select value={type} onValueChange={setType}>
+                            <SelectTrigger className="bg-slate-800 text-white border border-purple-500/50 focus:ring-purple-500 focus:border-purple-500 rounded-lg">
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 text-white border border-purple-500/50">
+                                <SelectItem
+                                    value="anytype"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    Any Type
+                                </SelectItem>
+                                <SelectItem
+                                    value="multiple"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    Multiple Choice
+                                </SelectItem>
+                                <SelectItem
+                                    value="boolean"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    True / False
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <Button
+                        onClick={handleStart}
+                        className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/30"
+                    >
+                        Start Challenge
+                    </Button>
                 </div>
 
-                <div className="space-y-2">
-                    <Label>Difficulty</Label>
-                    <Select value={difficulty} onValueChange={setDifficulty}>
-                        <SelectTrigger className="bg-slate-800 text-white border border-slate-700">
-                            <SelectValue placeholder="Select Difficulty" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border border-slate-700">
-                            <SelectItem value="anydiff">
-                                Any difficulty
-                            </SelectItem>
-                            <SelectItem value="easy">Easy</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="hard">Hard</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Select value={type} onValueChange={setType}>
-                        <SelectTrigger className="bg-slate-800 text-white border border-slate-700">
-                            <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border border-slate-700">
-                            <SelectItem value="anytype">Any Type</SelectItem>
-                            <SelectItem value="multiple">
-                                Multiple Choice
-                            </SelectItem>
-                            <SelectItem value="boolean">
-                                True / False
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <Button onClick={handleStart} className="w-full mt-4">
-                    Start Quiz
-                </Button>
+                {isLoading && (
+                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                    </div>
+                )}
             </Card>
+
+            <div className="text-blue-200 mt-6 text-sm text-center">
+                Powered by Open Trivia DB • Challenge your friends!
+            </div>
         </main>
     );
 }

@@ -16,7 +16,7 @@ export default function Home() {
                 <div className="max-w-4xl w-full text-center">
                     <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-white">
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400">
-                            QuizMinds
+                            QuizMaster
                         </span>
                     </h1>
                     <p className="text-xl md:text-2xl mb-8 text-gray-200">
