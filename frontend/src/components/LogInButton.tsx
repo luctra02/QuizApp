@@ -21,18 +21,18 @@ const LoginButton = () => {
     }, [supabase.auth]);
 
     return (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
             {user ? (
-                <div>
-                    <UserProfile />
-                </div>
+                <UserProfile />
             ) : (
                 <Button
                     onClick={() => {
                         router.push("/login");
                     }}
-                    className="w-full max-w-xs"
+                    className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200"
+                    size="sm"
                 >
+                    <span className="mr-1">👤</span>
                     Log in
                 </Button>
             )}
