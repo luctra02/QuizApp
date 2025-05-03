@@ -127,7 +127,7 @@ export default function HistoryPage() {
                                 No Quiz History Found
                             </h2>
                             <p className="text-blue-200 mb-6">
-                                You haven't taken any quizzes yet.
+                                You haven&apos;t taken any quizzes yet.
                             </p>
                             <Button
                                 onClick={() => (window.location.href = "/")}
