@@ -19,17 +19,17 @@ export default function RootLayout({
         <html lang="en">
             <head />
             <body className="relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-                {/* Particle Background */}
-                <ParticlesBackground />
-                {/* Navbar */}
-                <Navbar />
-                {/* Foreground content */}
-                <div className="relative z-10">
-                    <QueryProvider>
+                <QueryProvider>
+                    {/* Particle Background */}
+                    <ParticlesBackground />
+                    {/* Navbar */}
+                    <Navbar />
+                    {/* Foreground content */}
+                    <div className="relative z-10">
                         {children}
                         <Toaster />
-                    </QueryProvider>
-                </div>
+                    </div>
+                </QueryProvider>
             </body>
         </html>
     );
