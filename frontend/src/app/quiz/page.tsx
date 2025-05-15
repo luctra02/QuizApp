@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import useUser from "@/app/hooks/useUser";
 
 type Question = {
     question: string;
@@ -24,6 +26,8 @@ export default function QuizPage() {
     const [score, setScore] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [quizCompleted, setQuizCompleted] = useState(false);
+    const { data: user } = useUser();
+    const supabase = createSupabaseBrowser();
 
     useEffect(() => {
         const buildURL = () => {
@@ -46,14 +50,70 @@ export default function QuizPage() {
                 const data = await res.json();
 
                 if (data.response_code === 0 && data.results.length > 0) {
-                    const decodedQuestions = data.results.map((q: any) => ({
-                        ...q,
-                        question: atob(q.question),
-                        correct_answer: atob(q.correct_answer),
-                        incorrect_answers: q.incorrect_answers.map(
-                            (a: string) => atob(a)
-                        ),
-                    }));
+                    const decodedQuestions = data.results.map(
+                        (q: Question) => ({
+                            ...q,
+                            question: atob(q.question),
+                            correct_answer: atob(q.correct_answer),
+                            incorrect_answers: q.incorrect_answers.map(
+                                (a: string) => atob(a)
+                            ),
+                        })
+                    );
+
+                    // Upsert each question into your DB
+                    if (user?.id) {
+                        console.log("TESTING");
+                        const { data: categoriesTable } = await supabase
+                            .from("categories")
+                            .select("*");
+                        const { data: difficultiesTable } = await supabase
+                            .from("difficulties")
+                            .select("*");
+
+                        const getCategoryId = (name: string) => {
+                            return categoriesTable?.find((c) => c.name === name)
+                                ?.id;
+                        };
+
+                        const getDifficultyId = (name: string) => {
+                            return difficultiesTable?.find(
+                                (d) => d.name === name
+                            )?.id;
+                        };
+
+                        for (const q of decodedQuestions) {
+                            const { data: existingQuestion, error } =
+                                await supabase
+                                    .from("questions")
+                                    .select("id")
+                                    .eq("question_text", q.question) // Use question_text column here
+                                    .single();
+
+                            if (!existingQuestion) {
+                                const categoryId = getCategoryId(q.category);
+                                const difficultyId = getDifficultyId(
+                                    q.difficulty
+                                );
+                                const { error: insertError } = await supabase
+                                    .from("questions")
+                                    .insert({
+                                        question_text: q.question,
+                                        category_id: categoryId,
+                                        difficulty_id: difficultyId,
+                                        type: q.type,
+                                        correct_answer: q.correct_answer,
+                                    });
+
+                                if (insertError)
+                                    console.error(
+                                        "Insert question error:",
+                                        insertError
+                                    );
+                            }
+                        }
+                    }
+
                     setQuestions(decodedQuestions);
                 } else {
                     setError("No questions found. Try different settings.");
@@ -67,9 +127,9 @@ export default function QuizPage() {
         };
 
         fetchQuestions();
-    }, [searchParams]);
+    }, [searchParams, supabase, user?.id]);
 
-    const handleAnswerSelect = (answer: string) => {
+    const handleAnswerSelect = async (answer: string) => {
         if (selectedAnswer) return; // Prevent multiple selections
 
         setSelectedAnswer(answer);
@@ -81,6 +141,20 @@ export default function QuizPage() {
 
         // Show result for a moment before proceeding
         setShowResult(true);
+
+        if (user?.id) {
+            const quizId = searchParams.get("quizId");
+            const { error } = await supabase.from("quiz_questions").insert({
+                quiz_id: quizId,
+                question: currentQuestion.question,
+                correct_answer: currentQuestion.correct_answer,
+                selected_answer: answer,
+            });
+
+            if (error) {
+                console.error("Failed to save quiz question:", error);
+            }
+        }
 
         // Move to next question after delay
         setTimeout(() => {

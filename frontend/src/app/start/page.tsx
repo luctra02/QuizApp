@@ -48,7 +48,6 @@ export default function StartQuizPage() {
     }, []);
 
     const handleStart = async () => {
-
         const params = new URLSearchParams({
             category,
             difficulty,
@@ -56,7 +55,6 @@ export default function StartQuizPage() {
         });
 
         if (data?.id) {
-
             const { data: quiz, error } = await supabase
                 .from("quizzes")
                 .insert({
@@ -68,6 +66,10 @@ export default function StartQuizPage() {
                 })
                 .select("id") // get back the quiz_id
                 .single();
+
+            if (quiz) {
+                params.set("quizId", quiz.id); // ✅ pass it via query
+            }
         }
 
         router.push(`/quiz?${params.toString()}`);
