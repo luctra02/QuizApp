@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import useUser from "@/app/hooks/useUser";
 
 type Category = {
     id: number;
@@ -20,11 +22,13 @@ type Category = {
 
 export default function StartQuizPage() {
     const [categories, setCategories] = useState<Category[]>([]);
-    const [category, setCategory] = useState<string>("anycat");
-    const [difficulty, setDifficulty] = useState("anydiff");
-    const [type, setType] = useState("anytype");
+    const [category, setCategory] = useState<string>("0");
+    const [difficulty, setDifficulty] = useState("0");
+    const [type, setType] = useState("0");
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { data } = useUser();
+    const supabase = createSupabaseBrowser();
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -43,14 +47,28 @@ export default function StartQuizPage() {
         fetchCategories();
     }, []);
 
-    const handleStart = () => {
-        if (!category) return;
+    const handleStart = async () => {
 
         const params = new URLSearchParams({
             category,
             difficulty,
             type,
         });
+
+        if (data?.id) {
+
+            const { data: quiz, error } = await supabase
+                .from("quizzes")
+                .insert({
+                    user_id: data.id,
+                    category_id: category,
+                    difficulty_id: difficulty,
+                    score: 0, // you can update this later
+                    total_questions: 10, // or however many you set
+                })
+                .select("id") // get back the quiz_id
+                .single();
+        }
 
         router.push(`/quiz?${params.toString()}`);
     };
@@ -97,7 +115,7 @@ export default function StartQuizPage() {
                                 style={{ colorScheme: "dark" }}
                             >
                                 <SelectItem
-                                    value="anycat"
+                                    value="0"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     Any Category
@@ -129,13 +147,13 @@ export default function StartQuizPage() {
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 text-white border border-purple-500/50">
                                 <SelectItem
-                                    value="anydiff"
+                                    value="0"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     Any difficulty
                                 </SelectItem>
                                 <SelectItem
-                                    value="easy"
+                                    value="1"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     <span className="flex items-center">
@@ -144,7 +162,7 @@ export default function StartQuizPage() {
                                     </span>
                                 </SelectItem>
                                 <SelectItem
-                                    value="medium"
+                                    value="2"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     <span className="flex items-center">
@@ -153,7 +171,7 @@ export default function StartQuizPage() {
                                     </span>
                                 </SelectItem>
                                 <SelectItem
-                                    value="hard"
+                                    value="3"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     <span className="flex items-center">
@@ -176,7 +194,7 @@ export default function StartQuizPage() {
                             </SelectTrigger>
                             <SelectContent className="bg-slate-800 text-white border border-purple-500/50">
                                 <SelectItem
-                                    value="anytype"
+                                    value="0"
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     Any Type

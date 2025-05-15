@@ -5,7 +5,6 @@ import {
     CardTitle,
     CardDescription,
 } from "@/components/ui/card";
-import LoginButton from "@/components/LogInButton";
 import Link from "next/link";
 
 export default function Home() {

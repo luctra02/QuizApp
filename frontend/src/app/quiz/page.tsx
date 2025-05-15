@@ -31,16 +31,11 @@ export default function QuizPage() {
             params.set("amount", "10");
             params.set("encode", "base64"); // Helps prevent HTML entities
 
-            const category = searchParams.get("category") ?? "anycat";
-            const difficulty = searchParams.get("difficulty") ?? "anydiff";
-            const type = searchParams.get("type") ?? "anytype";
+            const type = searchParams.get("type") ?? "0";
 
-            if (category !== "anycat") params.set("category", category);
-            if (difficulty !== "anydiff") params.set("difficulty", difficulty);
-            if (type !== "anytype") params.set("type", type);
+            if (type !== "0") params.set("type", type);
 
             const url = `https://opentdb.com/api.php?${params.toString()}`;
-            console.log("Final URL:", url); // Debug log
             return url;
         };
 
