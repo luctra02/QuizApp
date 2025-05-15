@@ -13,6 +13,7 @@ type Question = {
     correct_answer: string;
     incorrect_answers: string[];
     type: string;
+    question_id?: string; // Optional for upsert
 };
 
 export default function QuizPage() {
@@ -63,7 +64,7 @@ export default function QuizPage() {
 
                     // Upsert each question into your DB
                     if (user?.id) {
-                        console.log("TESTING");
+                        const finalQuestions = [];
                         const { data: categoriesTable } = await supabase
                             .from("categories")
                             .select("*");
@@ -95,26 +96,39 @@ export default function QuizPage() {
                                 const difficultyId = getDifficultyId(
                                     q.difficulty
                                 );
-                                const { error: insertError } = await supabase
-                                    .from("questions")
-                                    .insert({
-                                        question_text: q.question,
-                                        category_id: categoryId,
-                                        difficulty_id: difficultyId,
-                                        type: q.type,
-                                        correct_answer: q.correct_answer,
-                                    });
+                                const { data: inserted, error: insertError } =
+                                    await supabase
+                                        .from("questions")
+                                        .insert({
+                                            question_text: q.question,
+                                            category_id: categoryId,
+                                            difficulty_id: difficultyId,
+                                            type: q.type,
+                                            correct_answer: q.correct_answer,
+                                        })
+                                        .select("id") // Return the inserted ID
+                                        .single();
 
+                                finalQuestions.push({
+                                    ...q,
+                                    question_id: inserted?.id,
+                                });
                                 if (insertError)
                                     console.error(
                                         "Insert question error:",
                                         insertError
                                     );
+                            } else {
+                                finalQuestions.push({
+                                    ...q,
+                                    question_id: existingQuestion.id,
+                                });
                             }
                         }
+                        setQuestions(finalQuestions);
+                    } else {
+                        setQuestions(decodedQuestions);
                     }
-
-                    setQuestions(decodedQuestions);
                 } else {
                     setError("No questions found. Try different settings.");
                 }
@@ -146,7 +160,7 @@ export default function QuizPage() {
             const quizId = searchParams.get("quizId");
             const { error } = await supabase.from("quiz_questions").insert({
                 quiz_id: quizId,
-                question: currentQuestion.question,
+                question_id: currentQuestion.question_id,
                 correct_answer: currentQuestion.correct_answer,
                 selected_answer: answer,
             });
@@ -181,7 +195,7 @@ export default function QuizPage() {
         router.push("/");
     };
 
-    if (loading) {
+    if (loading || questions.length === 0) {
         return (
             <main className="min-h-screen flex flex-col items-center justify-center p-6">
                 <Card className="bg-slate-900/80 backdrop-blur-md border-purple-500/30 border p-8 rounded-xl shadow-2xl w-full max-w-md text-white text-center">
