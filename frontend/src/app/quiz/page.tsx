@@ -81,8 +81,6 @@ export default function QuizPage() {
                             .from("difficulties")
                             .select("*");
 
-                        console.log(categoriesTable, difficultiesTable);
-
                         const getCategoryId = (name: string) => {
                             return categoriesTable?.find((c) => c.name === name)
                                 ?.id;
@@ -108,7 +106,6 @@ export default function QuizPage() {
                                     q.difficulty
                                 );
 
-                                console.log(categoryId, difficultyId);
                                 const { data: inserted, error: insertError } =
                                     await supabase
                                         .from("questions")
@@ -141,7 +138,6 @@ export default function QuizPage() {
                                     ...q,
                                     question_id: inserted?.id,
                                 });
-                                console.log(finalQuestions);
                                 if (insertError)
                                     console.error(
                                         "Insert question error:",
@@ -190,23 +186,33 @@ export default function QuizPage() {
             const { error } = await supabase.from("quiz_questions").insert({
                 quiz_id: quizId,
                 question_id: currentQuestion.question_id,
-                correct_answer: currentQuestion.correct_answer,
-                selected_answer: answer,
+                user_answer: answer,
+                is_correct: answer === currentQuestion.correct_answer,
             });
 
+            console.log(currentQuestion);
             if (error) {
                 console.error("Failed to save quiz question:", error);
             }
         }
 
         // Move to next question after delay
-        setTimeout(() => {
+        setTimeout(async () => {
             if (current < questions.length - 1) {
                 setCurrent(current + 1);
                 setSelectedAnswer(null);
                 setShowResult(false);
             } else {
                 // Quiz completed
+                if (user?.id) {
+                    const quizId = searchParams.get("quizId");
+                    await supabase
+                        .from("quizzes")
+                        .update({ score })
+                        .eq("id", quizId)
+                        .eq("user_id", user.id);
+                }
+
                 setQuizCompleted(true);
             }
         }, 1500);
