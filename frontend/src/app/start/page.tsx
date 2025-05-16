@@ -25,6 +25,7 @@ export default function StartQuizPage() {
     const [category, setCategory] = useState<string>("0");
     const [difficulty, setDifficulty] = useState("0");
     const [type, setType] = useState("0");
+    const [questionCount, setQuestionCount] = useState("10"); // Default to 10 questions
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const { data } = useUser();
@@ -52,6 +53,7 @@ export default function StartQuizPage() {
             category,
             difficulty,
             type,
+            amount: questionCount, // Add the question count to params
         });
 
         if (data?.id) {
@@ -61,14 +63,14 @@ export default function StartQuizPage() {
                     user_id: data.id,
                     category_id: category,
                     difficulty_id: difficulty,
-                    score: 0, // you can update this later
-                    total_questions: 10, // or however many you set
+                    score: 0,
+                    total_questions: parseInt(questionCount), // Use the selected question count
                 })
-                .select("id") // get back the quiz_id
+                .select("id")
                 .single();
 
             if (quiz) {
-                params.set("quizId", quiz.id); // ✅ pass it via query
+                params.set("quizId", quiz.id);
             }
         }
 
@@ -212,6 +214,53 @@ export default function StartQuizPage() {
                                     className="focus:bg-purple-700/30 focus:text-white hover:text-white"
                                 >
                                     True / False
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-blue-200 flex items-center">
+                            <span className="mr-2">🔢</span>
+                            Number of Questions
+                        </Label>
+                        <Select
+                            value={questionCount}
+                            onValueChange={setQuestionCount}
+                        >
+                            <SelectTrigger className="bg-slate-800 text-white border border-purple-500/50 focus:ring-purple-500 focus:border-purple-500 rounded-lg">
+                                <SelectValue placeholder="Select number of questions" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-800 text-white border border-purple-500/50">
+                                <SelectItem
+                                    value="2"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    2 Questions
+                                </SelectItem>
+                                <SelectItem
+                                    value="10"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    10 Questions
+                                </SelectItem>
+                                <SelectItem
+                                    value="15"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    15 Questions
+                                </SelectItem>
+                                <SelectItem
+                                    value="20"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    20 Questions
+                                </SelectItem>
+                                <SelectItem
+                                    value="25"
+                                    className="focus:bg-purple-700/30 focus:text-white hover:text-white"
+                                >
+                                    25 Questions
                                 </SelectItem>
                             </SelectContent>
                         </Select>
