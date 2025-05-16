@@ -14,6 +14,9 @@ type Question = {
     incorrect_answers: string[];
     type: string;
     question_id?: string; // Optional for upsert
+    category: string;
+    difficulty: string;
+    question_text: string;
 };
 
 export default function QuizPage() {
@@ -33,7 +36,7 @@ export default function QuizPage() {
     useEffect(() => {
         const buildURL = () => {
             const params = new URLSearchParams();
-            params.set("amount", "10");
+            params.set("amount", "2");
             params.set("encode", "base64"); // Helps prevent HTML entities
 
             const type = searchParams.get("type") ?? "0";
@@ -51,6 +54,9 @@ export default function QuizPage() {
                 const data = await res.json();
 
                 if (data.response_code === 0 && data.results.length > 0) {
+                    const capitalize = (s: string) =>
+                        s.charAt(0).toUpperCase() + s.slice(1);
+
                     const decodedQuestions = data.results.map(
                         (q: Question) => ({
                             ...q,
@@ -59,18 +65,23 @@ export default function QuizPage() {
                             incorrect_answers: q.incorrect_answers.map(
                                 (a: string) => atob(a)
                             ),
+                            category: atob(q.category), // ← decode this
+                            difficulty: capitalize(atob(q.difficulty)), // ← and this
+                            type: atob(q.type), // ← and this
                         })
                     );
 
                     // Upsert each question into your DB
                     if (user?.id) {
-                        const finalQuestions = [];
+                        const finalQuestions: Question[] = [];
                         const { data: categoriesTable } = await supabase
                             .from("categories")
                             .select("*");
                         const { data: difficultiesTable } = await supabase
                             .from("difficulties")
                             .select("*");
+
+                        console.log(categoriesTable, difficultiesTable);
 
                         const getCategoryId = (name: string) => {
                             return categoriesTable?.find((c) => c.name === name)
@@ -96,6 +107,8 @@ export default function QuizPage() {
                                 const difficultyId = getDifficultyId(
                                     q.difficulty
                                 );
+
+                                console.log(categoryId, difficultyId);
                                 const { data: inserted, error: insertError } =
                                     await supabase
                                         .from("questions")
@@ -109,10 +122,26 @@ export default function QuizPage() {
                                         .select("id") // Return the inserted ID
                                         .single();
 
+                                const {
+                                    data: incorrectAnswers,
+                                    error: incorrectAnswersError,
+                                } = await supabase
+                                    .from("incorrect_answers")
+                                    .insert(
+                                        q.incorrect_answers.map(
+                                            (answer: string) => ({
+                                                question_id: inserted?.id,
+                                                answer_text: answer,
+                                            })
+                                        )
+                                    )
+                                    .select("id");
+
                                 finalQuestions.push({
                                     ...q,
                                     question_id: inserted?.id,
                                 });
+                                console.log(finalQuestions);
                                 if (insertError)
                                     console.error(
                                         "Insert question error:",
