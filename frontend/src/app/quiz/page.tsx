@@ -36,11 +36,20 @@ export default function QuizPage() {
     useEffect(() => {
         const buildURL = () => {
             const params = new URLSearchParams();
-            params.set("amount", "2");
+            // Use the amount parameter from the URL or default to 10
+            const amount = searchParams.get("amount") ?? "10";
+            params.set("amount", amount);
             params.set("encode", "base64"); // Helps prevent HTML entities
 
-            const type = searchParams.get("type") ?? "0";
+            const category = searchParams.get("category") ?? "0";
+            if (category !== "0") params.set("category", category);
 
+            const difficulty = searchParams.get("difficulty") ?? "0";
+            if (difficulty === "1") params.set("difficulty", "easy");
+            else if (difficulty === "2") params.set("difficulty", "medium");
+            else if (difficulty === "3") params.set("difficulty", "hard");
+
+            const type = searchParams.get("type") ?? "0";
             if (type !== "0") params.set("type", type);
 
             const url = `https://opentdb.com/api.php?${params.toString()}`;
@@ -169,16 +178,17 @@ export default function QuizPage() {
     }, [searchParams, supabase, user?.id]);
 
     const handleAnswerSelect = async (answer: string) => {
-        if (selectedAnswer) return; // Prevent multiple selections
+        if (selectedAnswer) return;
 
         setSelectedAnswer(answer);
 
-        // Check if answer is correct and update score
-        if (answer === currentQuestion?.correct_answer) {
-            setScore(score + 1);
+        const isCorrect = answer === currentQuestion?.correct_answer;
+        const updatedScore = isCorrect ? score + 1 : score;
+
+        if (isCorrect) {
+            setScore(updatedScore); // updates the state, but we also store it locally
         }
 
-        // Show result for a moment before proceeding
         setShowResult(true);
 
         if (user?.id) {
@@ -187,47 +197,102 @@ export default function QuizPage() {
                 quiz_id: quizId,
                 question_id: currentQuestion.question_id,
                 user_answer: answer,
-                is_correct: answer === currentQuestion.correct_answer,
+                is_correct: isCorrect,
             });
 
-            console.log(currentQuestion);
             if (error) {
                 console.error("Failed to save quiz question:", error);
             }
         }
 
-        // Move to next question after delay
         setTimeout(async () => {
             if (current < questions.length - 1) {
                 setCurrent(current + 1);
                 setSelectedAnswer(null);
                 setShowResult(false);
             } else {
-                // Quiz completed
                 if (user?.id) {
                     const quizId = searchParams.get("quizId");
-                    await supabase
+                    console.log("Final score:", updatedScore);
+                    const { error } = await supabase
                         .from("quizzes")
-                        .update({ score })
+                        .update({ score: updatedScore })
                         .eq("id", quizId)
                         .eq("user_id", user.id);
+
+                    if (error) {
+                        console.error("Failed to update quiz score:", error);
+                    }
                 }
 
+                console.log("Final score:", updatedScore);
                 setQuizCompleted(true);
             }
         }, 1500);
     };
 
-    const restartQuiz = () => {
-        setCurrent(0);
-        setScore(0);
-        setSelectedAnswer(null);
-        setShowResult(false);
-        setQuizCompleted(false);
+    const restartQuiz = async () => {
+        if (user?.id) {
+            const originalQuizId = searchParams.get("quizId");
+
+            // 1. Get the original quiz to extract category_id, difficulty_id, and other settings
+            const { data: originalQuiz, error: fetchError } = await supabase
+                .from("quizzes")
+                .select("category_id, difficulty_id, total_questions")
+                .eq("id", originalQuizId)
+                .eq("user_id", user.id)
+                .single();
+
+            if (fetchError || !originalQuiz) {
+                console.error("Failed to fetch original quiz:", fetchError);
+                return;
+            }
+
+            // 2. Create a new quiz with the same settings
+            const { data: newQuiz, error: insertError } = await supabase
+                .from("quizzes")
+                .insert({
+                    user_id: user.id,
+                    category_id: originalQuiz.category_id,
+                    difficulty_id: originalQuiz.difficulty_id,
+                    score: 0,
+                    total_questions: originalQuiz.total_questions,
+                })
+                .select("id")
+                .single();
+
+            if (insertError || !newQuiz) {
+                console.error("Failed to create new quiz:", insertError);
+                return;
+            }
+
+            // 3. Update URL with new quizId, but keep same parameters
+            const params = new URLSearchParams(searchParams);
+            params.set("quizId", newQuiz.id);
+
+            // Reset the quiz state
+            setCurrent(0);
+            setScore(0);
+            setSelectedAnswer(null);
+            setShowResult(false);
+            setQuizCompleted(false);
+            setLoading(true);
+
+            // Navigate to new quiz with same parameters
+            router.replace(`/quiz?${params.toString()}`);
+        } else {
+            // For non-logged in users, simply reset the state
+            setCurrent(0);
+            setScore(0);
+            setSelectedAnswer(null);
+            setShowResult(false);
+            setQuizCompleted(false);
+            setLoading(true);
+        }
     };
 
     const goToHome = () => {
-        router.push("/");
+        router.push("/start");
     };
 
     if (loading || questions.length === 0) {
