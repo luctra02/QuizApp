@@ -34,6 +34,11 @@ export default function QuizPage() {
     const supabase = createSupabaseBrowser();
 
     useEffect(() => {
+        if (questions.length > 0) {
+            setLoading(false);
+            return;
+        }
+
         const buildURL = () => {
             const params = new URLSearchParams();
             // Use the amount parameter from the URL or default to 10
@@ -102,12 +107,13 @@ export default function QuizPage() {
                         };
 
                         for (const q of decodedQuestions) {
-                            const { data: existingQuestion, error } =
-                                await supabase
-                                    .from("questions")
-                                    .select("id")
-                                    .eq("question_text", q.question) // Use question_text column here
-                                    .single();
+                            const { data, error } = await supabase
+                                .from("questions")
+                                .select("id")
+                                .eq("question_text", q.question) // Use question_text column here
+                                .limit(1);
+
+                            const existingQuestion = data?.[0];
 
                             if (!existingQuestion) {
                                 const categoryId = getCategoryId(q.category);
@@ -175,7 +181,7 @@ export default function QuizPage() {
         };
 
         fetchQuestions();
-    }, [searchParams, supabase, user?.id]);
+    }, [questions.length, searchParams, supabase, user?.id]);
 
     const handleAnswerSelect = async (answer: string) => {
         if (selectedAnswer) return;
@@ -214,11 +220,13 @@ export default function QuizPage() {
                 if (user?.id) {
                     const quizId = searchParams.get("quizId");
                     console.log("Final score:", updatedScore);
+
                     const { error } = await supabase
                         .from("quizzes")
                         .update({ score: updatedScore })
                         .eq("id", quizId)
-                        .eq("user_id", user.id);
+                        .eq("user_id", user.id)
+                        .select();
 
                     if (error) {
                         console.error("Failed to update quiz score:", error);
