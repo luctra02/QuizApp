@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
@@ -20,6 +21,7 @@ export default function HistoryPage() {
     const [isLoading, setIsLoading] = useState(true);
     const { data: user, isLoading: userLoading } = useUser();
     const supabase = createSupabaseBrowser();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -174,7 +176,8 @@ export default function HistoryPage() {
                 {history.map((item) => (
                     <Card
                         key={item.id}
-                        className="bg-slate-900/80 backdrop-blur-md border-purple-500/30 border p-5 rounded-xl shadow-lg text-white"
+                        className="bg-slate-900/80 backdrop-blur-md border-purple-500/30 border p-5 rounded-xl shadow-lg text-white hover:border-purple-400/50 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/review/${item.id}`)}
                     >
                         <div className="flex flex-col md:flex-row justify-between">
                             <div className="flex-1">
@@ -210,6 +213,11 @@ export default function HistoryPage() {
                                     </p>
                                 </div>
                             </div>
+                        </div>
+                        <div className="mt-3 text-right">
+                            <span className="text-xs text-blue-300 flex items-center justify-end">
+                                View Details {'>'}
+                            </span>
                         </div>
                     </Card>
                 ))}
