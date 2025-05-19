@@ -79,9 +79,9 @@ export default function QuizPage() {
                             incorrect_answers: q.incorrect_answers.map(
                                 (a: string) => atob(a)
                             ),
-                            category: atob(q.category), // ← decode this
-                            difficulty: capitalize(atob(q.difficulty)), // ← and this
-                            type: atob(q.type), // ← and this
+                            category: atob(q.category), 
+                            difficulty: capitalize(atob(q.difficulty)), 
+                            type: atob(q.type), 
                         })
                     );
 
