@@ -15,8 +15,11 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import useUser from "@/app/hooks/useUser";
 
 export default function StatsPage() {
+    const { data: user } = useUser();
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({
         totalQuizzes: 0,
@@ -29,47 +32,138 @@ export default function StatsPage() {
     });
 
     useEffect(() => {
-        // In a real app, fetch data from localStorage or an API
-        setIsLoading(true);
+        async function fetchStats() {
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
 
-        // Simulate loading data
-        setTimeout(() => {
-            // Example data - in a real app, this would come from localStorage or an API
-            setStats({
-                totalQuizzes: 12,
-                averageScore: 76,
-                totalQuestions: 120,
-                correctAnswers: 91,
-                categoryBreakdown: [
-                    { name: "Science", value: 4 },
-                    { name: "History", value: 3 },
-                    { name: "Entertainment", value: 2 },
-                    { name: "Sports", value: 2 },
-                    { name: "Geography", value: 1 },
-                ],
-                difficultyBreakdown: [
-                    { name: "Easy", value: 5 },
-                    { name: "Medium", value: 4 },
-                    { name: "Hard", value: 3 },
-                ],
-                recentScores: [
-                    { date: "Apr 27", score: 70 },
-                    { date: "Apr 29", score: 90 },
-                    { date: "May 2", score: 60 },
-                    { date: "May 3", score: 80 },
-                ],
-            });
-            setIsLoading(false);
-        }, 1000);
-    }, []);
+            setIsLoading(true);
+            const supabase = createSupabaseBrowser();
+
+            try {
+                // Fetch user stats
+                const { data: userStats, error: userStatsError } =
+                    await supabase
+                        .from("user_stats")
+                        .select("*")
+                        .eq("id", user.id)
+                        .single();
+
+                if (userStatsError) throw userStatsError;
+
+                // Fetch quizzes for additional stats
+                const { data: quizzes, error: quizzesError } = await supabase
+                    .from("quizzes")
+                    .select(
+                        `
+                        id, 
+                        date_taken, 
+                        score, 
+                        total_questions,
+                        categories(name),
+                        difficulties(name)
+                    `
+                    )
+                    .eq("user_id", user.id)
+                    .order("date_taken", { ascending: false });
+
+                if (quizzesError) throw quizzesError;
+
+                // Calculate category breakdown
+                const categoryCount: Record<string, number> = {};
+                quizzes.forEach((quiz) => {
+                    const categoryName = quiz.categories.name;
+                    categoryCount[categoryName] =
+                        (categoryCount[categoryName] || 0) + 1;
+                });
+
+                const categoryBreakdown = Object.keys(categoryCount).map(
+                    (name) => ({
+                        name,
+                        value: categoryCount[name],
+                    })
+                );
+
+                // Calculate difficulty breakdown
+                const difficultyCount: Record<string, number> = {};
+                quizzes.forEach((quiz) => {
+                    const difficultyName = quiz.difficulties.name;
+                    difficultyCount[difficultyName] =
+                        (difficultyCount[difficultyName] || 0) + 1;
+                });
+
+                const difficultyBreakdown = Object.keys(difficultyCount).map(
+                    (name) => ({
+                        name,
+                        value: difficultyCount[name],
+                    })
+                );
+
+                // Calculate recent scores (last 5 quizzes)
+                const recentScores = quizzes
+                    .slice(0, 5)
+                    .map((quiz) => {
+                        const date = new Date(quiz.date_taken);
+                        const formattedDate = `${date.toLocaleString("default", { month: "short" })} ${date.getDate()}`;
+                        const scorePercentage = Math.round(
+                            (quiz.score / quiz.total_questions) * 100
+                        );
+
+                        return {
+                            date: formattedDate,
+                            score: scorePercentage,
+                        };
+                    })
+                    .reverse(); // Reverse to show oldest to newest
+
+                // Calculate average score
+                const averageScore =
+                    userStats.total_questions > 0
+                        ? Math.round(
+                              (userStats.correct_answers /
+                                  userStats.total_questions) *
+                                  100
+                          )
+                        : 0;
+
+                setStats({
+                    totalQuizzes: userStats.total_quizzes,
+                    averageScore: averageScore,
+                    totalQuestions: userStats.total_questions,
+                    correctAnswers: userStats.correct_answers,
+                    categoryBreakdown,
+                    difficultyBreakdown,
+                    recentScores,
+                });
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+                // If there's an error, at least show empty stats
+                setStats({
+                    totalQuizzes: 0,
+                    averageScore: 0,
+                    totalQuestions: 0,
+                    correctAnswers: 0,
+                    categoryBreakdown: [],
+                    difficultyBreakdown: [],
+                    recentScores: [],
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchStats();
+    }, [user]);
 
     const COLORS = ["#8b5cf6", "#6366f1", "#3b82f6", "#06b6d4", "#10b981"];
-    const DIFFICULTY_COLORS = {
+    const DIFFICULTY_COLORS: Record<string, string> = {
         Easy: "#10b981",
         Medium: "#f59e0b",
         Hard: "#ef4444",
     };
 
+    // Loading state
     if (isLoading) {
         return (
             <main className="min-h-screen flex flex-col items-center p-6 pt-24">
@@ -89,7 +183,44 @@ export default function StatsPage() {
         );
     }
 
-    // If no stats are available
+    // Not logged in state
+    if (!user) {
+        return (
+            <main className="min-h-screen flex flex-col items-center p-6 pt-24">
+                <div className="w-full max-w-4xl">
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-8 flex items-center">
+                        <span className="mr-3 text-blue-400">📊</span>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                            Statistics
+                        </span>
+                    </h1>
+
+                    <Card className="bg-slate-900/80 backdrop-blur-md border-purple-500/30 border p-8 rounded-xl shadow-2xl text-white text-center">
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <span className="text-5xl mb-4">🔐</span>
+                            <h2 className="text-2xl font-bold text-blue-300 mb-2">
+                                Please Log In
+                            </h2>
+                            <p className="text-blue-200 mb-6">
+                                You need to be logged in to view your
+                                statistics.
+                            </p>
+                            <Button
+                                onClick={() =>
+                                    (window.location.href = "/login")
+                                }
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            >
+                                Log In
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            </main>
+        );
+    }
+
+    // No stats available state
     if (stats.totalQuizzes === 0) {
         return (
             <main className="min-h-screen flex flex-col items-center p-6 pt-24">
@@ -123,6 +254,7 @@ export default function StatsPage() {
         );
     }
 
+    // Stats display
     return (
         <main className="min-h-screen flex flex-col items-center p-6 pt-24">
             <div className="w-full max-w-4xl">
@@ -232,7 +364,7 @@ export default function StatsPage() {
                                                     key={`cell-${entry.name}`}
                                                     fill={
                                                         DIFFICULTY_COLORS[
-                                                            entry.name as keyof typeof DIFFICULTY_COLORS
+                                                            entry.name
                                                         ]
                                                     }
                                                 />
@@ -280,8 +412,6 @@ export default function StatsPage() {
                         </ResponsiveContainer>
                     </div>
                 </Card>
-
-                {/* Badges or achievements could go here */}
             </div>
         </main>
     );
