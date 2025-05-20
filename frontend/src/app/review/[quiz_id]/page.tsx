@@ -46,7 +46,7 @@ export default function QuizReviewPage() {
             try {
                 setIsLoading(true);
 
-                // Fetch the quiz details
+                // Fetch quiz metadata
                 const { data: quizData, error: quizError } = await supabase
                     .from("quizzes")
                     .select(
@@ -63,15 +63,6 @@ export default function QuizReviewPage() {
                     return;
                 }
 
-                if (quizData.user_id !== user.id) {
-                    if (isMounted) {
-                        setError("Unauthorized access");
-                        setIsLoading(false);
-                    }
-                    router.push("/history");
-                    return;
-                }
-
                 const quizDetail: QuizDetail = {
                     id: quizData.id,
                     date: new Date(quizData.date_taken).toLocaleString(),
@@ -81,13 +72,18 @@ export default function QuizReviewPage() {
                     totalQuestions: quizData.total_questions,
                 };
 
+                // Fetch all quiz_questions
                 const { data: quizQuestions, error: questionsError } =
                     await supabase
                         .from("quiz_questions")
                         .select("question_id, user_answer, is_correct")
                         .eq("quiz_id", quiz_id);
 
-                if (questionsError || !quizQuestions) {
+                if (
+                    questionsError ||
+                    !quizQuestions ||
+                    quizQuestions.length === 0
+                ) {
                     if (isMounted) {
                         setError("Error fetching quiz questions");
                         setIsLoading(false);
@@ -95,34 +91,46 @@ export default function QuizReviewPage() {
                     return;
                 }
 
-                const questionResults = await Promise.all(
-                    quizQuestions.map(async (q) => {
-                        const { data: questionData, error } = await supabase
-                            .from("questions")
-                            .select("question_text, correct_answer, type")
-                            .eq("id", q.question_id)
-                            .single();
+                // Get all related question_ids
+                const questionIds = quizQuestions.map((q) => q.question_id);
 
-                        if (error || !questionData) return null;
+                // Fetch all question details in one go
+                const { data: questionsData, error: questionsFetchError } =
+                    await supabase
+                        .from("questions")
+                        .select("id, question_text, correct_answer, type")
+                        .in("id", questionIds);
 
-                        return {
-                            id: q.question_id,
-                            questionText: questionData.question_text,
-                            userAnswer: q.user_answer,
-                            correctAnswer: questionData.correct_answer,
-                            isCorrect: q.is_correct,
-                            type: questionData.type,
-                        };
+                if (questionsFetchError || !questionsData) {
+                    if (isMounted) {
+                        setError("Error fetching question data");
+                        setIsLoading(false);
+                    }
+                    return;
+                }
+
+                // Map them together
+                const questionResults: QuestionReview[] = quizQuestions
+                    .map((q) => {
+                        const question = questionsData.find(
+                            (qd) => qd.id === q.question_id
+                        );
+                        return question
+                            ? {
+                                  id: q.question_id,
+                                  questionText: question.question_text,
+                                  userAnswer: q.user_answer,
+                                  correctAnswer: question.correct_answer,
+                                  isCorrect: q.is_correct,
+                                  type: question.type,
+                              }
+                            : null;
                     })
-                );
-
-                const validQuestions = questionResults.filter(
-                    Boolean
-                ) as QuestionReview[];
+                    .filter(Boolean) as QuestionReview[];
 
                 if (isMounted) {
                     setQuiz(quizDetail);
-                    setQuestions(validQuestions);
+                    setQuestions(questionResults);
                     setIsLoading(false);
                 }
             } catch (err) {
@@ -135,7 +143,6 @@ export default function QuizReviewPage() {
         };
 
         fetchQuizDetails();
-
         return () => {
             isMounted = false;
         };
