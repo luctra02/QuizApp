@@ -242,7 +242,9 @@ export default function StatsPage() {
                                 Take some quizzes to generate statistics!
                             </p>
                             <Button
-                                onClick={() => (window.location.href = "/")}
+                                onClick={() =>
+                                    (window.location.href = "/start")
+                                }
                                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                             >
                                 Take a Quiz
