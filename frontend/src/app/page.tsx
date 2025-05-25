@@ -116,8 +116,7 @@ export default function Home() {
                         Ready to test your knowledge?
                     </h2>
                     <p className="text-gray-300 mb-6">
-                        Join thousands of quiz enthusiasts and start tracking
-                        your progress today.
+                        Start tracking your progress today.
                     </p>
                     <div className="flex flex-wrap justify-center gap-8">
                         <Stat
@@ -129,11 +128,6 @@ export default function Home() {
                             label="Questions"
                             value="4K+"
                             color="text-green-400"
-                        />
-                        <Stat
-                            label="Users"
-                            value="5K+"
-                            color="text-purple-400"
                         />
                     </div>
                 </div>
