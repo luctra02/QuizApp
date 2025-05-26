@@ -16,7 +16,8 @@ import {
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import useUser from "@/app/hooks/useUser";
 
-// Type definitions
+
+
 type QuizDetail = {
     id: string;
     date: string;
@@ -73,7 +74,9 @@ export default function QuizReviewPage() {
 
                 const quizDetail: QuizDetail = {
                     id: quizData.id,
-                    date: new Date(quizData.date_taken).toLocaleString(),
+                    date: quizData.date_taken
+                        ? new Date(quizData.date_taken).toLocaleString()
+                        : "Unknown date",
                     category: quizData.category?.name ?? "Unknown",
                     difficulty: quizData.difficulty?.name ?? "Unknown",
                     score: quizData.score,
@@ -212,7 +215,9 @@ export default function QuizReviewPage() {
             <PageContainer maxWidth="4xl">
                 <ErrorState
                     title="Error Loading Quiz"
-                    description={error || "There was a problem loading this quiz."}
+                    description={
+                        error || "There was a problem loading this quiz."
+                    }
                     actionText="Back to History"
                     onAction={() => router.push("/history")}
                 />
@@ -262,17 +267,13 @@ export default function QuizReviewPage() {
                     </div>
 
                     <div className="mt-4 md:mt-0 text-right">
-                        <p className="text-sm text-blue-300">
-                            Overall Score
-                        </p>
+                        <p className="text-sm text-blue-300">Overall Score</p>
                         <p
                             className={`text-3xl font-bold ${getScoreClass(quiz.score, quiz.totalQuestions)}`}
                         >
                             {quiz.score}/{quiz.totalQuestions}
                         </p>
-                        <p className="text-xs text-blue-300">
-                            {percentage}%
-                        </p>
+                        <p className="text-xs text-blue-300">{percentage}%</p>
                     </div>
                 </div>
             </Card>

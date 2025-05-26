@@ -4,7 +4,6 @@ import generateVerifyEmailTemplate from "@/emails";
 
 export async function POST(request: Request) {
   const data = await request.json();
-  console.log("Received signup data:", data);
   const supabase = supabaseAdmin();
 
   const res = await supabase.auth.admin.generateLink({

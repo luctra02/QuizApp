@@ -59,15 +59,21 @@ export default function StartQuizPage() {
         if (data?.id) {
             const { data: quiz, error } = await supabase
                 .from("quizzes")
-                .insert({
-                    user_id: data.id,
-                    category_id: category,
-                    difficulty_id: difficulty,
-                    score: 0,
-                    total_questions: parseInt(questionCount), // Use the selected question count
-                })
+                .insert([
+                    {
+                        user_id: data.id,
+                        category_id: Number(category), // convert to number
+                        difficulty_id: Number(difficulty), // convert to number
+                        score: 0,
+                        total_questions: parseInt(questionCount),
+                    },
+                ])
                 .select("id")
                 .single();
+
+            if (error) {
+                console.error("Insert quiz error:", error);
+            }
 
             if (quiz) {
                 params.set("quizId", quiz.id);

@@ -110,7 +110,9 @@ export default function StatsPage() {
                 const recentScores = quizzes
                     .slice(0, 5)
                     .map((quiz) => {
-                        const date = new Date(quiz.date_taken);
+                        const date = quiz.date_taken
+                            ? new Date(quiz.date_taken)
+                            : new Date();
                         const formattedDate = `${date.toLocaleString("default", { month: "short" })} ${date.getDate()}`;
                         const scorePercentage = Math.round(
                             (quiz.score / quiz.total_questions) * 100
@@ -124,20 +126,19 @@ export default function StatsPage() {
                     .reverse(); // Reverse to show oldest to newest
 
                 // Calculate average score
+                const totalQuestions = userStats.total_questions ?? 0;
+                const correctAnswers = userStats.correct_answers ?? 0;
+
                 const averageScore =
-                    userStats.total_questions > 0
-                        ? Math.round(
-                              (userStats.correct_answers /
-                                  userStats.total_questions) *
-                                  100
-                          )
+                    totalQuestions > 0
+                        ? Math.round((correctAnswers / totalQuestions) * 100)
                         : 0;
 
                 setStats({
-                    totalQuizzes: userStats.total_quizzes,
-                    averageScore: averageScore,
-                    totalQuestions: userStats.total_questions,
-                    correctAnswers: userStats.correct_answers,
+                    totalQuizzes: userStats.total_quizzes ?? 0,
+                    averageScore,
+                    totalQuestions,
+                    correctAnswers,
                     categoryBreakdown,
                     difficultyBreakdown,
                     recentScores,

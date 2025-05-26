@@ -25,7 +25,6 @@ export default function QuizPage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [score, setScore] = useState(0);
     const [showResult, setShowResult] = useState(false);
@@ -79,9 +78,9 @@ export default function QuizPage() {
                             incorrect_answers: q.incorrect_answers.map(
                                 (a: string) => atob(a)
                             ),
-                            category: atob(q.category), 
-                            difficulty: capitalize(atob(q.difficulty)), 
-                            type: atob(q.type), 
+                            category: atob(q.category),
+                            difficulty: capitalize(atob(q.difficulty)),
+                            type: atob(q.type),
                         })
                     );
 
@@ -107,7 +106,7 @@ export default function QuizPage() {
                         };
 
                         for (const q of decodedQuestions) {
-                            const { data, error } = await supabase
+                            const { data } = await supabase
                                 .from("questions")
                                 .select("id")
                                 .eq("question_text", q.question) // Use question_text column here
@@ -121,6 +120,14 @@ export default function QuizPage() {
                                     q.difficulty
                                 );
 
+                                if (!categoryId || !difficultyId) {
+                                    console.error(
+                                        "Category or difficulty not found for question:",
+                                        q
+                                    );
+                                    continue;
+                                }
+
                                 const { data: inserted, error: insertError } =
                                     await supabase
                                         .from("questions")
@@ -131,13 +138,10 @@ export default function QuizPage() {
                                             type: q.type,
                                             correct_answer: q.correct_answer,
                                         })
-                                        .select("id") // Return the inserted ID
+                                        .select("id")
                                         .single();
 
-                                const {
-                                    data: incorrectAnswers,
-                                    error: incorrectAnswersError,
-                                } = await supabase
+                                const {} = await supabase
                                     .from("incorrect_answers")
                                     .insert(
                                         q.incorrect_answers.map(
@@ -169,12 +173,9 @@ export default function QuizPage() {
                     } else {
                         setQuestions(decodedQuestions);
                     }
-                } else {
-                    setError("No questions found. Try different settings.");
                 }
             } catch (err) {
                 console.error("Error fetching questions:", err);
-                setError("Failed to fetch questions. Please try again.");
             } finally {
                 setLoading(false);
             }
@@ -199,9 +200,18 @@ export default function QuizPage() {
 
         if (user?.id) {
             const quizId = searchParams.get("quizId");
+            if (!quizId) {
+                console.error("Missing quizId in URL");
+                return;
+            }
+            const questionId = currentQuestion.question_id;
+            if (!questionId) {
+                console.error("Missing question_id");
+                return;
+            }
             const { error } = await supabase.from("quiz_questions").insert({
                 quiz_id: quizId,
-                question_id: currentQuestion.question_id,
+                question_id: questionId,
                 user_answer: answer,
                 is_correct: isCorrect,
             });
@@ -219,7 +229,10 @@ export default function QuizPage() {
             } else {
                 if (user?.id) {
                     const quizId = searchParams.get("quizId");
-                    console.log("Final score:", updatedScore);
+                    if (!quizId) {
+                        console.error("Missing quizId in URL");
+                        return;
+                    }
 
                     const { error } = await supabase
                         .from("quizzes")
@@ -233,7 +246,6 @@ export default function QuizPage() {
                     }
                 }
 
-                console.log("Final score:", updatedScore);
                 setQuizCompleted(true);
             }
         }, 1500);
@@ -242,6 +254,10 @@ export default function QuizPage() {
     const restartQuiz = async () => {
         if (user?.id) {
             const originalQuizId = searchParams.get("quizId");
+            if (!originalQuizId) {
+                console.error("Missing quizId in URL");
+                return;
+            }
 
             // 1. Get the original quiz to extract category_id, difficulty_id, and other settings
             const { data: originalQuiz, error: fetchError } = await supabase

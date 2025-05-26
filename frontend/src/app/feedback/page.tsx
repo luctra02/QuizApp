@@ -1,24 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import useUser from "@/app/hooks/useUser";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-    Brain,
-    TrendingUp,
-    Clock,
-    Award,
-    Loader2,
-} from "lucide-react";
+import { Brain, TrendingUp, Clock, Award, Loader2 } from "lucide-react";
 import {
     LoadingState,
     AuthRequired,
@@ -27,6 +16,17 @@ import {
     PageContainer,
     PageHeader,
 } from "@/components/ui";
+
+import { Database } from "@/types/supabase";
+
+type QuizRow = Database["public"]["Tables"]["quizzes"]["Row"];
+type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
+type DifficultyRow = Database["public"]["Tables"]["difficulties"]["Row"];
+
+type SupabaseQuizData = Omit<QuizRow, "category_id" | "difficulty_id"> & {
+    category: Pick<CategoryRow, "name"> | null;
+    difficulty: Pick<DifficultyRow, "name"> | null;
+};
 
 interface Quiz {
     id: string;
@@ -49,28 +49,25 @@ export default function AIFeedbackSelectionPage() {
     const supabase = createSupabaseBrowser();
     const router = useRouter();
 
-    useEffect(() => {
-        if (user) {
-            fetchQuizzes();
-        } else if (!userLoading) {
+    const fetchQuizzes = useCallback(async () => {
+        if (!user) {
+            setError("User not authenticated");
             setIsLoading(false);
+            return;
         }
-    }, [user, userLoading]);
 
-    const fetchQuizzes = async () => {
         try {
             setIsLoading(true);
             setError(null);
-
             const { data, error } = await supabase
                 .from("quizzes")
                 .select(
                     `
-          id, 
-          date_taken, 
-          score, 
-          total_questions, 
-          category:category_id(name), 
+          id,
+          date_taken,
+          score,
+          total_questions,
+          category:category_id(name),
           difficulty:difficulty_id(name)
         `
                 )
@@ -81,24 +78,29 @@ export default function AIFeedbackSelectionPage() {
                 throw new Error("Failed to fetch quiz data");
             }
 
-            // Fix the type issue by properly typing the data from Supabase
-            const formattedQuizzes: Quiz[] = (data as any[]).map((quiz) => ({
-                id: quiz.id,
-                date: new Date(quiz.date_taken).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-                category: quiz.category?.name ?? "Unknown",
-                difficulty: quiz.difficulty?.name ?? "Unknown",
-                score: quiz.score,
-                totalQuestions: quiz.total_questions,
-                percentage: Math.round(
-                    (quiz.score / quiz.total_questions) * 100
-                ),
-            }));
+            // Now properly typed without 'any'
+            const formattedQuizzes: Quiz[] = (data as unknown as SupabaseQuizData[]).map(
+                (quiz) => ({
+                    id: quiz.id,
+                    date: new Date(quiz.date_taken ?? "").toLocaleDateString(
+                        "en-US",
+                        {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        }
+                    ),
+                    category: quiz.category?.name ?? "Unknown",
+                    difficulty: quiz.difficulty?.name ?? "Unknown",
+                    score: quiz.score,
+                    totalQuestions: quiz.total_questions,
+                    percentage: Math.round(
+                        (quiz.score / quiz.total_questions) * 100
+                    ),
+                })
+            );
 
             setQuizzes(formattedQuizzes);
         } catch (err: unknown) {
@@ -109,7 +111,15 @@ export default function AIFeedbackSelectionPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user, supabase]); // Changed from user?.id to user since we need the whole user object
+
+    useEffect(() => {
+        if (user) {
+            fetchQuizzes();
+        } else if (!userLoading) {
+            setIsLoading(false);
+        }
+    }, [user, userLoading, fetchQuizzes]); // Now fetchQuizzes is stable
 
     const handleGetFeedback = async (quizId: string) => {
         setGeneratingFeedback(quizId);

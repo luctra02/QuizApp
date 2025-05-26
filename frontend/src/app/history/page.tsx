@@ -12,6 +12,16 @@ import {
     PageContainer,
     PageHeader,
 } from "@/components/ui";
+import { Database } from "@/types/supabase";
+
+type QuizRow = Database["public"]["Tables"]["quizzes"]["Row"];
+type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
+type DifficultyRow = Database["public"]["Tables"]["difficulties"]["Row"];
+
+type SupabaseQuizData = Omit<QuizRow, "category_id" | "difficulty_id"> & {
+    category: Pick<CategoryRow, "name"> | null;
+    difficulty: Pick<DifficultyRow, "name"> | null;
+};
 
 type QuizHistoryItem = {
     id: string;
@@ -47,17 +57,17 @@ export default function HistoryPage() {
                 .eq("user_id", user.id)
                 .order("date_taken", { ascending: false });
 
-            console.log("Fetched quiz history:", data);
-
             if (error) {
                 console.error("Error fetching history:", error);
                 setIsLoading(false);
                 return;
             }
 
-            const parsedHistory: QuizHistoryItem[] = data.map((quiz) => ({
+            const parsedHistory: QuizHistoryItem[] = (
+                data as unknown as SupabaseQuizData[]
+            ).map((quiz) => ({
                 id: quiz.id,
-                date: new Date(quiz.date_taken).toLocaleDateString("en-US", {
+                date: new Date(quiz.date_taken ?? "").toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
