@@ -7,9 +7,7 @@ import type { Engine } from "tsparticles-engine";
 
 export default function ParticlesBackground() {
     const particlesInit = useCallback(async (engine: Engine) => {
-        console.log("Initializing particles..."); // Debug log
         await loadSlim(engine); // Load slim instead of full
-        console.log("Particles initialized!");
     }, []);
 
     return (
